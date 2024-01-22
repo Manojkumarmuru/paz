@@ -25,8 +25,8 @@ parser.add_argument('-d', '--distance', type=float, default=1000.0,
                     help='Distance between camera and 3D model')
 parser.add_argument('-s', '--shift', type=float, default=0.01,
                     help='Shift')
-parser.add_argument('-l', '--light', type=int, default=1,
-                    help='Light intensity')
+parser.add_argument('-l', '--light', type=int, default=2,
+                    help='Light intensity') # 2 for powerdrill, 2.7 for ape
 parser.add_argument('-b', '--background', type=int, default=0,
                     help='Plain background color')
 parser.add_argument('-r', '--roll', type=float, default=3.14159,
@@ -75,9 +75,10 @@ encoder.load_weights(weights_path, by_name=True)
 decoder = AutoEncoder((size, size, 3), latent_dimension, mode='decoder')
 decoder.load_weights(weights_path, by_name=True)
 inference = ImplicitRotationPredictor(encoder, decoder, measure, renderer, z_scale)
-#0817, 0114 doesnt work 
+
+#0817, 0114 doesnt work
 IMAGE_PATH = ('/home/manummk95/Desktop/paz/paz/examples/efficientpose/'
-              'Linemod_preprocessed/data/08/rgb/0133.png')
+              'Linemod_preprocessed/data/08/rgb/0000.png')
 anno_path = ('/home/manummk95/Desktop/paz/paz/examples/efficientpose/'
              'Linemod_preprocessed/data/08/gt.yml')
 
