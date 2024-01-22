@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 
 from .opencv_image import (convert_color_space, gaussian_image_blur,
                            median_image_blur, warp_affine, resize_image,
@@ -43,7 +44,7 @@ def random_brightness(image, delta=32):
         delta: Int.
     """
     image = cast_image(image, np.float32)
-    random_brightness = np.random.uniform(-delta, delta)
+    random_brightness = np.random.uniform(0, delta)
     image = image + random_brightness
     image = np.clip(image, 0, 255)
     image = cast_image(image, np.uint8)
@@ -180,6 +181,15 @@ def blend_alpha_channel(image, background):
         raise ValueError('``image`` does not contain an alpha mask.')
     foreground, alpha = np.split(image, [3], -1)
     alpha = alpha / 255.0
+    background = cv2.resize(background, (640, 480), interpolation= cv2.INTER_LINEAR)
+    H, W = background.shape[:2]
+    c_x, c_y = H/2.0, W/2.0
+    alpha_H, alpha_W = alpha.shape[:2]
+    crop_x_min = int(c_x - alpha_H/2.0)
+    crop_x_max = int(c_x + alpha_H/2.0)
+    crop_y_min = int(c_y - alpha_W/2.0)
+    crop_y_max = int(c_y + alpha_W/2.0)
+    background = background[crop_x_min:crop_x_max, crop_y_min: crop_y_max]
     background = (1.0 - alpha) * background.astype(float)
     image = (alpha * foreground.astype(float)) + background
     return image.astype('uint8')

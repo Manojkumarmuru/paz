@@ -10,9 +10,9 @@ class AugmentImage(SequentialProcessor):
     def __init__(self):
         super(AugmentImage, self).__init__()
         self.add(pr.RandomContrast())
-        self.add(pr.RandomBrightness())
+        self.add(pr.RandomBrightness(6))
         self.add(pr.RandomSaturation(0.7))
-        self.add(pr.RandomHue())
+        self.add(pr.RandomHue(8))
 
 
 class PreprocessImage(SequentialProcessor):

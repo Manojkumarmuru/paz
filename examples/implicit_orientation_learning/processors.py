@@ -1,6 +1,6 @@
 from paz.abstract import Processor
 import numpy as np
-
+from operator import itemgetter
 
 class MakeDictionary(Processor):
     def __init__(self, encoder, renderer):
@@ -30,5 +30,8 @@ class MeasureSimilarity(Processor):
     def call(self, latent_vector):
         latent_vectors = self.dictionary['latent_vectors']
         measurements = self.measure(latent_vectors, latent_vector)
-        closest_image = self.dictionary[np.argmax(measurements)]
-        return latent_vector, closest_image
+        k = 10
+        top_k = list(np.argsort(measurements, axis=0)[-k:, 0])
+        closest_images = itemgetter(*top_k)(self.dictionary)
+        # closest_image = self.dictionary[np.argmax(measurements)]
+        return latent_vector, closest_images

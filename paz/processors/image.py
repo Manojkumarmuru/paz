@@ -1,7 +1,7 @@
 import numpy as np
-
+import yaml
 from ..abstract import Processor
-
+import cv2
 from ..backend.image import cast_image
 from ..backend.image import load_image
 from ..backend.image import random_saturation
@@ -166,7 +166,7 @@ class RandomHue(Processor):
         delta: Int, indicating the range (-delta, delta ) of possible
             hue values.
     """
-    def __init__(self, delta=18):
+    def __init__(self, delta=10):
         self.delta = delta
         super(RandomHue, self).__init__()
 
@@ -353,19 +353,28 @@ class BlendRandomCroppedBackground(Processor):
         background_paths: List of strings. Each element of the list is a
             full-path to an image used for cropping a background.
     """
-    def __init__(self, background_paths):
+    def __init__(self, background_paths, yaml_path):
         super(BlendRandomCroppedBackground, self).__init__()
         if not isinstance(background_paths, list):
             raise ValueError('``background_paths`` must be list')
         if len(background_paths) == 0:
             raise ValueError('No paths given in ``background_paths``')
         self.background_paths = background_paths
+        self.yaml_path = yaml_path
+        with open(yaml_path, 'r') as f:
+            file_contents = yaml.safe_load(f)
+            f.close()
+        self.file_contents = file_contents
 
     def call(self, image):
         random_arg = np.random.randint(0, len(self.background_paths))
         background_path = self.background_paths[random_arg]
         background = load_image(background_path)
-        background = random_shape_crop(background, image.shape[:2])
+        background = cv2.cvtColor(background, cv2.COLOR_RGB2BGR)
+        # bbox_ape = self.file_contents[random_arg][0]['obj_bb']
+        # centre_x = int(bbox_ape[0] + bbox_ape[2]/2 + np.round(np.random.uniform(-15, 15)))
+        # centre_y = int(bbox_ape[1] + bbox_ape[3]/2 + np.round(np.random.uniform(-15, 15)))
+        # background = background[centre_x-64:centre_x+64, centre_y-64:centre_y+64, :]
         if background is None:
             H, W, num_channels = image.shape
             # background contains always a channel less

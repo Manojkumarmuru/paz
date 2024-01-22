@@ -136,7 +136,6 @@ def roll_camera(world_to_camera, angle):
         max_roll: 'None' or float. If None, the camera is not rolled.
             If float it should be a value between [0, 2*pi)
     """
-    angle = np.random.uniform(-angle, angle)
     z_rotation = np.array(
         [[np.cos(angle), -np.sin(angle), 0.],
          [np.sin(angle), +np.cos(angle), 0.],

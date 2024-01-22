@@ -21,18 +21,15 @@ description = 'Training script for learning implicit orientation vector'
 root_path = os.path.join(os.path.expanduser('~'), '.keras/paz/')
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument('-op', '--obj_path', type=str, help='Path of 3D OBJ model',
-                    default=os.path.join(
-                        root_path,
-                        'datasets/ycb/models/035_power_drill/textured.obj'))
+                    default='obj_08.ply')
 parser.add_argument('-cl', '--class_name', default='035_power_drill', type=str,
                     help='Class name to be added to model save path')
 parser.add_argument('-id', '--images_directory', type=str,
                     help='Path to directory containing background images',
-                    default=os.path.join(
-                        root_path, 'datasets/voc-backgrounds/'))
+                    default='/home/manummk95/Desktop/paz/paz/examples/efficientpose/Linemod_preprocessed/data/01/rgb/')
 parser.add_argument('-bs', '--batch_size', default=32, type=int,
                     help='Batch size for training')
-parser.add_argument('-lr', '--learning_rate', default=0.001, type=float,
+parser.add_argument('-lr', '--learning_rate', default=0.0002, type=float,
                     help='Initial learning rate for Adam')
 parser.add_argument('-is', '--latent_dimension', default=128, type=int,
                     help='Latent dimension of the auto-encoder')
@@ -42,7 +39,7 @@ parser.add_argument('-sp', '--stop_patience', default=7, type=int,
                     help='Number of epochs before doing early stopping')
 parser.add_argument('-pp', '--plateau_patience', default=3, type=int,
                     help='Number of epochs before reducing learning rate')
-parser.add_argument('-e', '--max_num_epochs', default=10000, type=int,
+parser.add_argument('-e', '--max_num_epochs', default=2, type=int,
                     help='Maximum number of epochs before finishing')
 parser.add_argument('-st', '--steps_per_epoch', default=1000, type=int,
                     help='Steps per epoch')
@@ -55,14 +52,14 @@ parser.add_argument('-r', '--roll', default=3.14159, type=float,
 parser.add_argument('-s', '--shift', default=0.05, type=float,
                     help='Threshold of random shift of camera')
 parser.add_argument('-d', '--depth', nargs='+', type=float,
-                    default=[0.3, 0.5],
+                    default=[940.0, 1040.0],
                     help='Distance from camera to origin in meters')
 parser.add_argument('-fv', '--y_fov', default=3.14159 / 4.0, type=float,
                     help='Field of view angle in radians')
 parser.add_argument('-l', '--light', nargs='+', type=float,
-                    default=[.5, 30],
+                    default=[1.0, 1.2],
                     help='Light intensity from poseur')
-parser.add_argument('-oc', '--num_occlusions', default=2, type=int,
+parser.add_argument('-oc', '--num_occlusions', default=0, type=int,
                     help='Number of occlusions')
 parser.add_argument('-sa', '--save_path',
                     default=os.path.join(
@@ -70,25 +67,34 @@ parser.add_argument('-sa', '--save_path',
                     type=str, help='Path for writing model weights and logs')
 args = parser.parse_args()
 
-
+image_shape = [480, 640]
+input_size = 128
 # setting optimizer and compiling model
 latent_dimension = args.latent_dimension
-model = AutoEncoder((args.image_size, args.image_size, 3), latent_dimension)
+model = AutoEncoder((input_size, input_size, 3), latent_dimension)
 optimizer = Adam(args.learning_rate, amsgrad=True)
-model.compile(optimizer, args.loss, metrics=['mse'])
+model.compile(optimizer, 'mean_squared_error', metrics=['mse'])
 model.summary()
 
 # setting scene
-renderer = SingleView(args.obj_path, (args.image_size, args.image_size),
+
+renderer = SingleView(args.obj_path, list(reversed(image_shape)),
                       args.y_fov, args.depth, args.light, bool(args.top_only),
                       args.roll, args.shift)
 
 # creating sequencer
 image_paths = glob.glob(os.path.join(args.images_directory, '*.png'))
 processor = DomainRandomization(
-    renderer, args.image_size, image_paths, args.num_occlusions)
+    renderer, image_shape, image_paths, args.num_occlusions)
 
 sequence = GeneratingSequence(processor, args.batch_size, args.steps_per_epoch)
+import matplotlib.pyplot as plt
+for _ in range(15):
+    seq = sequence[0]
+    plt.imshow(seq[0]['input_image'][0])
+    plt.figure()
+    plt.imshow(seq[1]['label_image'][0])
+    plt.show()
 
 # making directory for saving model weights and logs
 model_name = '_'.join([model.name, str(latent_dimension), args.class_name])
@@ -121,7 +127,7 @@ with open(os.path.join(save_path, 'model_summary.txt'), 'w') as filer:
     model.summary(print_fn=lambda x: filer.write(x + '\n'))
 
 # model optimization
-model.fit_generator(
+model.fit(
     sequence,
     steps_per_epoch=args.steps_per_epoch,
     epochs=args.max_num_epochs,

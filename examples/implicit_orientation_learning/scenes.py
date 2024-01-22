@@ -5,7 +5,7 @@ from paz.backend.render import compute_modelview_matrices
 from pyrender import PerspectiveCamera, OffscreenRenderer, DirectionalLight
 from pyrender import RenderFlags, Mesh, Scene
 import trimesh
-
+import cv2
 
 class SingleView():
     """Render-ready scene composed of a single object and a single moving camera.
@@ -42,20 +42,35 @@ class SingleView():
 
     def _sample_parameters(self):
         distance = sample_uniformly(self.distance)
-        camera_origin = sample_point_in_sphere(distance, self.top_only)
-        camera_origin = random_perturbation(camera_origin, self.epsilon)
+        theta = np.random.uniform(np.pi/2, 0)
+        x = distance * np.sin(theta) * np.cos(0)
+        y = distance * np.sin(theta) * np.sin(0)
+        z = distance * np.cos(theta)
+        camera_origin = np.array([x, y, z])
+        # camera_origin = sample_point_in_sphere(distance, self.top_only)
+        # camera_origin = random_perturbation(camera_origin, self.epsilon)
         light_intensity = sample_uniformly(self.light_intensity)
         return camera_origin, light_intensity
 
     def render(self):
         camera_origin, intensity = self._sample_parameters()
         camera_to_world, world_to_camera = compute_modelview_matrices(
-            camera_origin, self.world_origin, self.roll, self.shift)
+            camera_origin, self.world_origin, -np.pi/2, self.shift)
         self.light.light.intensity = intensity
         self.scene.set_pose(self.camera, camera_to_world)
+        z_angle = np.random.uniform(0, 2*np.pi)
+        z_rotation = np.array(
+                    [[np.cos(z_angle), -np.sin(z_angle), 0., 0],
+                     [np.sin(z_angle), +np.cos(z_angle), 0.0, 0],
+                     [0., 0., 1.0, 0],
+                     [0., 0., 0.0, 1]])
+        self.scene.set_pose(self.mesh, z_rotation)
         self.scene.set_pose(self.light, camera_to_world)
         image, depth = self.renderer.render(self.scene, flags=self.RGBA)
         image, alpha = split_alpha_channel(image)
+        x_min, y_min, x_max, y_max = compute_box_from_mask(alpha, 255)
+        image = image[y_min:y_max, x_min:x_max]
+        alpha = alpha[y_min:y_max, x_min:x_max]
         return image, alpha
 
 
@@ -83,31 +98,84 @@ class DictionaryView():
         self.distance = distance
         # 0.1 values are to avoid gimbal lock
         theta_max = np.pi / 2.0 if top_only else np.pi
-        self.thetas = np.linspace(0.1, theta_max - 0.1, theta_steps)
-        self.phis = np.linspace(0.1, 2 * np.pi - 0.1, phi_steps)
+        self.thetas = np.linspace(np.pi/2, 0.00, theta_steps)
+        # self.thetas = np.linspace(0, np.pi/2, theta_steps) # This theta works
+        self.obj_z_rotation = np.linspace(0.00, 2 * np.pi, phi_steps)
         self.renderer = OffscreenRenderer(*viewport_size)
         self.RGBA = RenderFlags.RGBA
 
     def render(self):
         dictionary_data = []
         for theta_arg, theta in enumerate(self.thetas):
-            for phi_arg, phi in enumerate(self.phis):
-                x = self.distance * np.sin(theta) * np.cos(phi)
-                y = self.distance * np.sin(theta) * np.sin(phi)
+            for phi_arg, z_angle in enumerate(self.obj_z_rotation):
+                x = self.distance * np.sin(theta) * np.cos(0)
+                y = self.distance * np.sin(theta) * np.sin(0)
                 z = self.distance * np.cos(theta)
                 matrices = compute_modelview_matrices(
-                    np.array([x, z, y]), self.world_origin)
+                    np.array([x, y, z]), self.world_origin, roll=-np.pi/2) #x z y works
                 camera_to_world, world_to_camera = matrices
                 self.scene.set_pose(self.camera, camera_to_world)
                 self.scene.set_pose(self.light, camera_to_world)
+                z_rotation = np.array(
+                    [[np.cos(z_angle), -np.sin(z_angle), 0., 0],
+                     [np.sin(z_angle), +np.cos(z_angle), 0.0, 0],
+                     [0., 0., 1.0, 0],
+                     [0., 0., 0.0, 1]])
+                self.scene.set_pose(self.mesh, z_rotation)
                 camera_to_world = camera_to_world.flatten()
                 world_to_camera = world_to_camera.flatten()
                 image, depth = self.renderer.render(
                     self.scene, flags=self.RGBA)
+                # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
                 image, alpha = split_alpha_channel(image)
+                x_min, y_min, x_max, y_max = compute_box_from_depth(depth, 0)
+                image = image[y_min:y_max, x_min:x_max]
+                image = cv2.resize(image, (128, 128), interpolation=cv2.INTER_LINEAR)
                 matrices = np.vstack([world_to_camera, camera_to_world])
                 sample = {'image': image,
                           'alpha': alpha,
                           'depth': depth, 'matrices': matrices}
                 dictionary_data.append(sample)
         return dictionary_data
+
+
+def compute_box_from_mask(mask, mask_value):
+    """Computes bounding box from mask image.
+
+    # Arguments
+        mask: Array mask corresponding to raw image.
+        mask_value: Int, pixel gray value of foreground in mask image.
+
+    # Returns:
+        box: List containing box coordinates.
+    """
+    masked = np.where(mask == mask_value)
+    mask_x, mask_y = masked[1], masked[0]
+    if mask_x.size <= 0 or mask_y.size <= 0:
+        box = [0, 0, 0, 0]
+    else:
+        x_min, y_min = np.min(mask_x), np.min(mask_y)
+        x_max, y_max = np.max(mask_x), np.max(mask_y)
+        box = [x_min, y_min, x_max, y_max]
+    return box
+
+
+def compute_box_from_depth(depth, bg_value):
+    """Computes bounding box from mask image.
+
+    # Arguments
+        mask: Array mask corresponding to raw image.
+        mask_value: Int, pixel gray value of foreground in mask image.
+
+    # Returns:
+        box: List containing box coordinates.
+    """
+    masked = np.where(depth > bg_value)
+    mask_x, mask_y = masked[1], masked[0]
+    if mask_x.size <= 0 or mask_y.size <= 0:
+        box = [0, 0, 0, 0]
+    else:
+        x_min, y_min = np.min(mask_x), np.min(mask_y)
+        x_max, y_max = np.max(mask_x), np.max(mask_y)
+        box = [x_min, y_min, x_max, y_max]
+    return box
