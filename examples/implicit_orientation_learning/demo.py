@@ -25,7 +25,7 @@ parser.add_argument('-d', '--distance', type=float, default=1000.0,
                     help='Distance between camera and 3D model')
 parser.add_argument('-s', '--shift', type=float, default=0.01,
                     help='Shift')
-parser.add_argument('-l', '--light', type=int, default=2,
+parser.add_argument('-l', '--light', type=int, default=2.3,
                     help='Light intensity') # 2 for powerdrill, 2.7 for ape
 parser.add_argument('-b', '--background', type=int, default=0,
                     help='Plain background color')

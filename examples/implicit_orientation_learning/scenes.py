@@ -3,7 +3,7 @@ from paz.backend.render import sample_uniformly, split_alpha_channel
 from paz.backend.render import random_perturbation, sample_point_in_sphere
 from paz.backend.render import compute_modelview_matrices
 from pyrender import PerspectiveCamera, OffscreenRenderer, DirectionalLight
-from pyrender import RenderFlags, Mesh, Scene
+from pyrender import RenderFlags, Mesh, Scene, viewer
 import trimesh
 import cv2
 from pyrender.material import MetallicRoughnessMaterial
@@ -96,7 +96,7 @@ class DictionaryView():
         self.mesh = self.scene.add(Mesh.from_trimesh(
             trimesh.load(filepath), smooth=True, material=None))
         self.world_origin = self.mesh.mesh.centroid
-        self.light = self.scene.add(DirectionalLight([0.8, 0.8, 0.8], light))
+        self.light = self.scene.add(DirectionalLight([1.0, 1.0, 1.0], light))
         self.distance = distance
         # 0.1 values are to avoid gimbal lock
         theta_max = np.pi / 2.0 if top_only else np.pi
@@ -124,25 +124,26 @@ class DictionaryView():
                      [0., 0., 1.0, 0],
                      [0., 0., 0.0, 1]])
                 self.scene.set_pose(self.mesh, z_rotation)
+                # viewer.Viewer(self.scene)
                 camera_to_world = camera_to_world.flatten()
                 world_to_camera = world_to_camera.flatten()
                 image, depth = self.renderer.render(
                     self.scene, flags=self.RGBA)
-                # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
                 image, alpha = split_alpha_channel(image)
                 x_min, y_min, x_max, y_max = compute_box_from_depth(depth, 0)
                 image = image[y_min:y_max, x_min:x_max]
                 image = cv2.resize(image, (128, 128), interpolation=cv2.INTER_LINEAR)
                 HSV = cv2.cvtColor(image, cv2.COLOR_BGR2HSV).astype(np.uint8)
                 H, S, V = HSV[:, :, 0], HSV[:, :, 1], HSV[:, :, 2]
-                S = (S*1.8).astype(np.uint8)
-                V = (V*1.0).astype(np.uint8)
+                # S = (S*1.2).astype(np.uint8)
+                # V = (V*0.75).astype(np.uint8)
                 H = H[:, :, np.newaxis]
                 S = S[:, :, np.newaxis]
                 V = V[:, :, np.newaxis]
                 HSV_composed = np.concatenate((H, S, V), axis=-1)
                 image = cv2.cvtColor(HSV_composed, cv2.COLOR_HSV2BGR)
-                image = np.power(image, 1/1.2).clip(0,255).astype(np.uint8)
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                # image = np.power(image, 1/1.2).clip(0,255).astype(np.uint8)
                 matrices = np.vstack([world_to_camera, camera_to_world])
                 sample = {'image': image,
                           'alpha': alpha,
