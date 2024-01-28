@@ -73,7 +73,7 @@ input_size = 128
 latent_dimension = args.latent_dimension
 model = AutoEncoder((input_size, input_size, 3), latent_dimension)
 optimizer = Adam(args.learning_rate, amsgrad=True)
-model.compile(optimizer, 'mean_squared_error', metrics=['mse'])
+model.compile(optimizer, 'binary_crossentropy', metrics=['mse'])
 model.summary()
 
 # setting scene

@@ -25,8 +25,8 @@ parser.add_argument('-d', '--distance', type=float, default=1000.0,
                     help='Distance between camera and 3D model')
 parser.add_argument('-s', '--shift', type=float, default=0.01,
                     help='Shift')
-parser.add_argument('-l', '--light', type=int, default=1,
-                    help='Light intensity')
+parser.add_argument('-l', '--light', type=int, default=2,
+                    help='Light intensity') # 2 for powerdrill, 2.7 for ape
 parser.add_argument('-b', '--background', type=int, default=0,
                     help='Plain background color')
 parser.add_argument('-r', '--roll', type=float, default=3.14159,
@@ -56,7 +56,6 @@ size = parameters['image_size']
 latent_dimension = parameters['latent_dimension']
 weights_path = os.path.join(path, args.model_name + '_weights.hdf5')
 
-z_scale = 0.8
 # obj_path = get_file('textured.obj', None,
 #                     cache_subdir='paz/datasets/ycb/models/035_power_drill/')
 obj_path = 'obj_08.ply'
@@ -74,7 +73,7 @@ encoder = AutoEncoder((size, size, 3), latent_dimension, mode='encoder')
 encoder.load_weights(weights_path, by_name=True)
 decoder = AutoEncoder((size, size, 3), latent_dimension, mode='decoder')
 decoder.load_weights(weights_path, by_name=True)
-inference = ImplicitRotationPredictor(encoder, decoder, measure, renderer, z_scale)
+inference = ImplicitRotationPredictor(encoder, decoder, measure, renderer)
 #0817, 0114 doesnt work 
 IMAGE_PATH = ('/home/manummk95/Desktop/paz/paz/examples/efficientpose/'
               'Linemod_preprocessed/data/08/rgb/0133.png')
