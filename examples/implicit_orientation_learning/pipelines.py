@@ -10,7 +10,7 @@ import numpy as np
 
 
 class ImplicitRotationPredictor(Processor):
-    def __init__(self, encoder, decoder, measure, renderer, z_scale):
+    def __init__(self, encoder, decoder, measure, renderer):
         super(ImplicitRotationPredictor, self).__init__()
         self.show_decoded_image = pr.ShowImage('decoded_image', wait=False)
         self.show_closest_image1 = pr.ShowImage('closest_image1', wait=False)
@@ -24,7 +24,6 @@ class ImplicitRotationPredictor(Processor):
         self.show_closest_image9 = pr.ShowImage('closest_image9', wait=False)
         self.show_closest_image10 = pr.ShowImage('closest_image10', wait=False)
         self.encoder = EncoderPredictor(encoder)
-        self.z_scale = z_scale
         self.dictionary = MakeDictionary(self.encoder, renderer)()
         self.encoder.add(pr.ExpandDims(0))
         self.encoder.add(MeasureSimilarity(self.dictionary, measure))
@@ -34,7 +33,7 @@ class ImplicitRotationPredictor(Processor):
 
     def call(self, image):
         latent_vector, closest_images = self.encoder(image)
-        latent_vector = latent_vector * self.z_scale
+        latent_vector = latent_vector
         self.show_closest_image1(closest_images[0])
         self.show_closest_image2(closest_images[1])
         self.show_closest_image3(closest_images[2])
