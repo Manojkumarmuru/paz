@@ -32,7 +32,8 @@ class SingleView():
         self.epsilon = 0.01
 
     def _build_scene(self, path, size, light, y_fov):
-        self.scene = Scene(bg_color=[0, 0, 0, 0])
+        self.scene = Scene(bg_color=[0, 0, 0, 0],
+                           ambient_light=[0.1255, 0.1255, 0.1255, 1.0])
         self.light = self.scene.add(
             DirectionalLight([1.0, 1.0, 1.0], np.mean(light)))
         self.camera = self.scene.add(
@@ -71,6 +72,7 @@ class SingleView():
         image, alpha = split_alpha_channel(image)
         x_min, y_min, x_max, y_max = compute_box_from_mask(alpha, 255)
         image = image[y_min:y_max, x_min:x_max]
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         alpha = alpha[y_min:y_max, x_min:x_max]
         return image, alpha
 

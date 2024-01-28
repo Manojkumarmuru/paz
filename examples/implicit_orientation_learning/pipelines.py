@@ -62,7 +62,6 @@ class DomainRandomizationProcessor(Processor):
 
     def call(self):
         input_image, alpha_mask = self.render()
-        input_image = cv2.cvtColor(input_image, cv2.COLOR_RGB2BGR)
         label_image = self.copy(input_image)
         if self.split == pr.TRAIN:
             input_image = self.augment(input_image, alpha_mask)

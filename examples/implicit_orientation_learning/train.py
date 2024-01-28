@@ -57,7 +57,7 @@ parser.add_argument('-d', '--depth', nargs='+', type=float,
 parser.add_argument('-fv', '--y_fov', default=3.14159 / 4.0, type=float,
                     help='Field of view angle in radians')
 parser.add_argument('-l', '--light', nargs='+', type=float,
-                    default=[1.0, 1.2],
+                    default=[2.0, 2.0],
                     help='Light intensity from poseur')
 parser.add_argument('-oc', '--num_occlusions', default=0, type=int,
                     help='Number of occlusions')
@@ -88,13 +88,13 @@ processor = DomainRandomization(
     renderer, image_shape, image_paths, args.num_occlusions)
 
 sequence = GeneratingSequence(processor, args.batch_size, args.steps_per_epoch)
-import matplotlib.pyplot as plt
-for _ in range(15):
-    seq = sequence[0]
-    plt.imshow(seq[0]['input_image'][0])
-    plt.figure()
-    plt.imshow(seq[1]['label_image'][0])
-    plt.show()
+# import matplotlib.pyplot as plt
+# for _ in range(15):
+#     seq = sequence[0]
+#     plt.imshow(seq[0]['input_image'][0])
+#     plt.figure()
+#     plt.imshow(seq[1]['label_image'][0])
+#     plt.show()
 
 # making directory for saving model weights and logs
 model_name = '_'.join([model.name, str(latent_dimension), args.class_name])
