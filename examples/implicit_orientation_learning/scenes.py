@@ -90,8 +90,9 @@ class DictionaryView():
     """
     def __init__(self, filepath, viewport_size=(128, 128),
                  y_fov=3.14159 / 4., distance=0.30, top_only=False,
-                 light=5.0, theta_steps=10, phi_steps=10):
+                 light=5.0, theta_steps=10, phi_steps=10,):
         self.scene = Scene(bg_color=[0, 0, 0], ambient_light=[0.1255, 0.1255, 0.1255])
+        # Bring camera as close to linemod camera
         self.camera = self.scene.add(PerspectiveCamera(
             y_fov, aspectRatio=np.divide(*viewport_size)))
         self.mesh = self.scene.add(Mesh.from_trimesh(
@@ -137,7 +138,7 @@ class DictionaryView():
                 image = cv2.resize(image, (128, 128), interpolation=cv2.INTER_LINEAR)
                 HSV = cv2.cvtColor(image, cv2.COLOR_BGR2HSV).astype(np.uint8)
                 H, S, V = HSV[:, :, 0], HSV[:, :, 1], HSV[:, :, 2]
-                # S = (S*1.8).astype(np.uint8)
+                S = (S*1.3).astype(np.uint8)
                 # V = (V*1.0).astype(np.uint8)
                 H = H[:, :, np.newaxis]
                 S = S[:, :, np.newaxis]
@@ -148,7 +149,8 @@ class DictionaryView():
                 matrices = np.vstack([world_to_camera, camera_to_world])
                 sample = {'image': image,
                           'alpha': alpha,
-                          'depth': depth, 'matrices': matrices}
+                          'depth': depth, 'matrices': matrices,
+                          'raw_im_dims': [x_min, y_min, x_max, y_max]}
                 dictionary_data.append(sample)
         return dictionary_data
 

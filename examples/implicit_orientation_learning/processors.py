@@ -16,7 +16,8 @@ class MakeDictionary(Processor):
         for sample_arg, sample in enumerate(data):
             image = sample['image']
             latent_vectors[sample_arg] = self.encoder(image)
-            dictionary[sample_arg] = image
+            dictionary[sample_arg] = (image, sample['raw_im_dims'])
+            # dictionary[sample_arg]['raw_im_dims'] = sample['raw_im_dims']
         dictionary['latent_vectors'] = latent_vectors
         return dictionary
 

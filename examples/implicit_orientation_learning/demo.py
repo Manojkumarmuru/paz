@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 import yaml
+import numpy as np
 import cv2
 from tensorflow.keras.utils import get_file
 # from sklearn.metrics.pairwise import euclidean_distances as measure
@@ -56,11 +57,17 @@ size = parameters['image_size']
 latent_dimension = parameters['latent_dimension']
 weights_path = os.path.join(path, args.model_name + '_weights.hdf5')
 
+fx = 572.41140
+px = 325.26110
+fy = 573.57043
+py = 242.04899
+linemod_camera_params = [fx, fy, px, py]
 # obj_path = get_file('textured.obj', None,
 #                     cache_subdir='paz/datasets/ycb/models/035_power_drill/')
 obj_path = 'obj_08.ply'
+cam_W, cam_H = 640, 480
 renderer = DictionaryView(
-    obj_path, (640, 480), args.y_fov,
+    obj_path, (cam_W, cam_H), args.y_fov,
     args.distance, bool(args.top_only), args.light, args.theta_steps,
     args.phi_steps)
 dict_images = renderer.render()
@@ -74,11 +81,12 @@ encoder.load_weights(weights_path, by_name=True)
 decoder = AutoEncoder((size, size, 3), latent_dimension, mode='decoder')
 decoder.load_weights(weights_path, by_name=True)
 inference = ImplicitRotationPredictor(encoder, decoder, measure, renderer)
-#0817, 0114 doesnt work 
+#0817, 0114, 0133 doesnt work
 IMAGE_PATH = ('/home/manummk95/Desktop/paz/paz/examples/efficientpose/'
-              'Linemod_preprocessed/data/08/rgb/0133.png')
+              'Linemod_preprocessed/data/08/rgb/0000.png')
 anno_path = ('/home/manummk95/Desktop/paz/paz/examples/efficientpose/'
              'Linemod_preprocessed/data/08/gt.yml')
+f_real = (fx + fy) / 2.0
 
 with open(anno_path, 'r') as f:
     file_contents = yaml.safe_load(f)
@@ -90,11 +98,15 @@ x_min, y_min, W, H = bbox
 x_max = x_min + W
 y_max = y_min + H
 
+# ####### Compute focal length of pyrender camera ###
+f_syn = cam_H / (2 * np.tan(args.y_fov / 2))
+t_syn = args.distance
 image = load_image(IMAGE_PATH)
 image = image[y_min:y_max, x_min:x_max]
 image = cv2.resize(image, (128, 128), interpolation=cv2.INTER_LINEAR)
-output = inference(image)
+output = inference(image, t_syn, f_syn, f_real, [x_min, y_min, x_max, y_max])
+print('Real z :{}'.format(file_contents[anno_key][0]['cam_t_m2c']))
+print('Estimated z :{}'.format(output['t_real_z']))
 show_image(output['image'])
-print('l')
 # player = VideoPlayer((1280, 960), inference, camera=Camera(args.camera_id))
 # player.run()
