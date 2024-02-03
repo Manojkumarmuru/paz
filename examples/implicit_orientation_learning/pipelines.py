@@ -66,6 +66,7 @@ class ImplicitRotationPredictor(Processor):
         K_syn = np.array([[f_syn, 0, 0], [0, f_syn, 0], [0, 0, 1]])
         R_obj_2_cams = []
         for i in range(len(closest_images)):
+            img = closest_images[i][0]
             x_min, y_min, x_max, y_max = closest_images[i][1]
             syn_diag = np.sqrt((x_max - x_min) ** 2 + (y_max - y_min) ** 2)
             t_real_z = t_syn_z * (syn_diag/real_diag) * (f_real/f_syn)
