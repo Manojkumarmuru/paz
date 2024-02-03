@@ -8,6 +8,7 @@ from pyrender import RenderFlags, Mesh, Scene, viewer
 import trimesh
 import cv2
 
+
 class SingleView():
     """Render-ready scene composed of a single object and a single moving camera.
 
@@ -150,7 +151,10 @@ class DictionaryView():
                 sample = {'image': image,
                           'alpha': alpha,
                           'depth': depth, 'matrices': matrices,
-                          'raw_im_dims': [x_min, y_min, x_max, y_max]}
+                          'bb_syn': [x_min, y_min, x_max, y_max],
+                          'world_to_camera': world_to_camera,
+                          'mesh_2_world': z_rotation,
+                          't_syn': [x, y, z]}
                 dictionary_data.append(sample)
         return dictionary_data
 

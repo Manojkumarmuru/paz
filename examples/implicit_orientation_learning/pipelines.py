@@ -29,10 +29,10 @@ class ImplicitRotationPredictor(Processor):
         self.encoder.add(MeasureSimilarity(self.dictionary, measure))
         self.decoder = DecoderPredictor(decoder)
         outputs = ['image', 'latent_vector', 'latent_image', 'decoded_image',
-                   't_real_z']
+                   't_real_z', 't_reals']
         self.wrap = pr.WrapOutput(outputs)
 
-    def call(self, image, t_syn, f_syn, f_real, raw_im_dims):
+    def call(self, image, t_syn, f_syn, f_real, bb_real, K_real):
         latent_vector, closest_images = self.encoder(image)
         latent_vector = latent_vector
         self.show_closest_image1(closest_images[0][0])
@@ -46,23 +46,41 @@ class ImplicitRotationPredictor(Processor):
         self.show_closest_image9(closest_images[8][0])
         self.show_closest_image10(closest_images[9][0])
         decoded_image = self.decoder(latent_vector[0])
-        t_real_zs = self.compute_t_real_z(image, t_syn, f_syn, f_real,
-                                          closest_images, raw_im_dims)
+        t_real_zs, t_reals = self.compute_t_real(image, t_syn, f_syn, f_real,
+                                        closest_images, bb_real, K_real)
         self.show_decoded_image(decoded_image)
         return self.wrap(image, latent_vector, closest_images,
-                         decoded_image, t_real_zs)
+                         decoded_image, t_real_zs, t_reals)
 
-    def compute_t_real_z(self, image, t_syn, f_syn, f_real,
-                         closest_images, raw_im_dims):
-        x_min, y_min, x_max, y_max = raw_im_dims
+    def compute_t_real(self, image, t_syn_z, f_syn, f_real,
+                       closest_images, bb_real, K_real):
+        x_min, y_min, x_max, y_max = bb_real
         real_diag = np.sqrt((x_max - x_min) ** 2 + (y_max - y_min) ** 2)
         t_real_zs = []
+        t_reals = []
+        xc_real = (bb_real[1] + bb_real[3]) / 2.0 - (640/2.0)
+        yc_real = (bb_real[0] + bb_real[2]) / 2.0 - (480/2.0)
+        bb_real_c = np.array([[xc_real, yc_real, 1]])
+        K_syn = np.array([[f_syn, 0, 0], [0, f_syn, 0], [0, 0, 1]])
         for i in range(len(closest_images)):
             x_min, y_min, x_max, y_max = closest_images[i][1]
             syn_diag = np.sqrt((x_max - x_min) ** 2 + (y_max - y_min) ** 2)
-            t_real_z = t_syn * (syn_diag/real_diag) * (f_real/f_syn)
+            t_real_z = t_syn_z * (syn_diag/real_diag) * (f_real/f_syn)
+            xc_syn = (closest_images[i][1][1] + closest_images[i][1][3])/2.0 - (640/2.0)
+            yc_syn = (closest_images[i][1][0] + closest_images[i][1][2])/2.0 - (480/2.0)
+            bb_syn_c = np.array([[xc_syn, yc_syn, 1]])
+            delta_t = (t_real_z * np.linalg.pinv(K_real) @ bb_real_c.T -
+                       t_syn_z * np.linalg.pinv(K_syn) @ bb_syn_c.T)
+            world_2_cam = closest_images[i][2]
+            mesh_2_world = closest_images[i][3]
+            world_2_mesh = np.linalg.pinv(mesh_2_world)
+            cam_c_world = np.array([[*closest_images[i][4], 1]]).T
+            t_syn = (world_2_mesh @ cam_c_world)
+            t_real = t_syn[:-1] + delta_t
+            t_reals.append(t_real)
             t_real_zs.append(t_real_z)
-        return t_real_zs
+        return t_real_zs, t_reals
+
 
 class DomainRandomizationProcessor(Processor):
     def __init__(self, renderer, image_paths, num_occlusions, split=pr.TRAIN):

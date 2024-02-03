@@ -56,6 +56,11 @@ parameters = json.load(open(os.path.join(path, 'hyperparameters.json'), 'r'))
 size = parameters['image_size']
 latent_dimension = parameters['latent_dimension']
 weights_path = os.path.join(path, args.model_name + '_weights.hdf5')
+K_real = np.array([
+    [572.41140, 000.00000, 5.26110],
+    [000.00000, 573.57043, 2.04899],
+    [000.00000, 000.00000, 001.00000]],
+    dtype=np.float32)
 
 fx = 572.41140
 px = 325.26110
@@ -104,9 +109,10 @@ t_syn = args.distance
 image = load_image(IMAGE_PATH)
 image = image[y_min:y_max, x_min:x_max]
 image = cv2.resize(image, (128, 128), interpolation=cv2.INTER_LINEAR)
-output = inference(image, t_syn, f_syn, f_real, [x_min, y_min, x_max, y_max])
+output = inference(image, t_syn, f_syn, f_real, [x_min, y_min, x_max, y_max], K_real)
 print('Real z :{}'.format(file_contents[anno_key][0]['cam_t_m2c']))
 print('Estimated z :{}'.format(output['t_real_z']))
+print('Treal :{}'.format(output['t_reals']))
 show_image(output['image'])
 # player = VideoPlayer((1280, 960), inference, camera=Camera(args.camera_id))
 # player.run()
