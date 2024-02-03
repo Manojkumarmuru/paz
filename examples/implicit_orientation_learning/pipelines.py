@@ -97,7 +97,7 @@ class ImplicitRotationPredictor(Processor):
             R_y_alpha = np.array([[np.cos(alpha_y), 0, np.sin(alpha_y)],
                                   [0, 1, 0],
                                   [-np.sin(alpha_y), 0, np.cos(alpha_y)]])
-            R_obj_2_cam = R_y_alpha@R_x_alpha@obj_to_cam_init[:3, :3]
+            R_obj_2_cam = R_y_alpha @ R_x_alpha @ obj_to_cam_init[:3, :3]
             R_obj_2_cams.append(R_obj_2_cam)
         return t_real_zs, t_reals, R_obj_2_cams
 
