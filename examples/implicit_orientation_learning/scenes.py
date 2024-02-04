@@ -121,19 +121,12 @@ class DictionaryView():
                 camera_to_world, world_to_camera = matrices
 
                 ######
-                # negate x and y rotation axis
                 LINEMOD_cam_R_m2c = [0.89572400, 0.32865000, -0.29944599, 0.02470270, -0.70924699, -0.70452702, -0.44392401, 0.62366402, -0.64340800]
-                LINEMOD_cam_t_m2c = [52.69479096, 80.22896910, 983.86871058]
-                LINEMOD_cam_R_m2c = np.array(LINEMOD_cam_R_m2c).reshape(3, 3)
-                LINEMOD_cam_R_m2c[0:3, 0] = LINEMOD_cam_R_m2c[0:3, 0] * -1
-                LINEMOD_cam_R_m2c[0:3, 1] = LINEMOD_cam_R_m2c[0:3, 1] * -1
-                LINEMOD_cam_t_m2c = np.array(LINEMOD_cam_t_m2c) * -1
-                LINEMOD_cam_t_m2c = LINEMOD_cam_t_m2c[np.newaxis, :]
-                camera_transform = np.hstack((LINEMOD_cam_R_m2c,
-                                              LINEMOD_cam_t_m2c.T))
-                world_to_camera = np.vstack((camera_transform, np.array(
-                    [0, 0, 0, 1])))
+                LIENMOD_cam_t_m2c = [52.69479096, 80.22896910, 983.86871058]
+                world_to_camera = linemod_to_pyrender_cam_transform(
+                    LINEMOD_cam_R_m2c, LIENMOD_cam_t_m2c)
                 #####
+
                 camera_to_world = np.linalg.pinv(world_to_camera)
                 self.scene.set_pose(self.camera, camera_to_world)
                 self.scene.set_pose(self.light, camera_to_world)
@@ -183,6 +176,18 @@ class DictionaryView():
                           't_syn': [x, y, z]}
                 dictionary_data.append(sample)
         return dictionary_data
+
+
+def linemod_to_pyrender_cam_transform(LINEMOD_cam_R_m2c, LINEMOD_cam_t_m2c):
+    LINEMOD_cam_R_m2c = np.array(LINEMOD_cam_R_m2c).reshape(3, 3)
+    LINEMOD_cam_R_m2c[0:3, 0] = LINEMOD_cam_R_m2c[0:3, 0] * -1
+    LINEMOD_cam_R_m2c[0:3, 1] = LINEMOD_cam_R_m2c[0:3, 1] * -1
+    LINEMOD_cam_t_m2c = np.array(LINEMOD_cam_t_m2c) * -1
+    LINEMOD_cam_t_m2c = LINEMOD_cam_t_m2c[np.newaxis, :]
+    camera_transform = np.hstack((LINEMOD_cam_R_m2c, LINEMOD_cam_t_m2c.T))
+    world_to_camera = np.vstack((camera_transform, np.array(
+        [0, 0, 0, 1])))
+    return world_to_camera
 
 
 def compute_box_from_mask(mask, mask_value):
