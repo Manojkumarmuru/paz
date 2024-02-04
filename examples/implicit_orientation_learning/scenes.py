@@ -121,20 +121,19 @@ class DictionaryView():
                 camera_to_world, world_to_camera = matrices
 
                 ######
-                LINEMOD_cam_R_m2c = [0.98548597, -0.00825023, -0.16955499, -0.13048200, -0.67573500, -0.72550398, -0.10858900, 0.73709798, -0.66700399]
-                LINEMOD_cam_t_m2c = [27.85431770, -110.12161613, 1023.44225463]
+                # negate x and y rotation axis
+                LINEMOD_cam_R_m2c = [0.89572400, 0.32865000, -0.29944599, 0.02470270, -0.70924699, -0.70452702, -0.44392401, 0.62366402, -0.64340800]
+                LINEMOD_cam_t_m2c = [52.69479096, 80.22896910, 983.86871058]
                 LINEMOD_cam_R_m2c = np.array(LINEMOD_cam_R_m2c).reshape(3, 3)
                 LINEMOD_cam_R_m2c[0:3, 0] = LINEMOD_cam_R_m2c[0:3, 0] * -1
                 LINEMOD_cam_R_m2c[0:3, 1] = LINEMOD_cam_R_m2c[0:3, 1] * -1
-                LINEMOD_cam_t_m2c = np.array(LINEMOD_cam_t_m2c)
+                LINEMOD_cam_t_m2c = np.array(LINEMOD_cam_t_m2c) * -1
                 LINEMOD_cam_t_m2c = LINEMOD_cam_t_m2c[np.newaxis, :]
                 camera_transform = np.hstack((LINEMOD_cam_R_m2c,
                                               LINEMOD_cam_t_m2c.T))
                 world_to_camera = np.vstack((camera_transform, np.array(
                     [0, 0, 0, 1])))
                 #####
-                world_to_camera[2, 3] = world_to_camera[2, 3] * -1
-                world_to_camera[1, 3] = world_to_camera[1, 3] * -1
                 camera_to_world = np.linalg.pinv(world_to_camera)
                 self.scene.set_pose(self.camera, camera_to_world)
                 self.scene.set_pose(self.light, camera_to_world)
@@ -146,30 +145,24 @@ class DictionaryView():
                      [0., np.sin(rad_x), np.cos(rad_x), 0],
                      [0., 0., 0.0, 1]])
 
-                # rad_y = np.deg2rad(180)
-                # y_rotation = np.array(
-                #     [[+np.cos(rad_y), 0, np.sin(rad_y), 0],
-                #      [0, 1, 0, 0],
-                #      [-np.sin(rad_y), 0, np.cos(rad_y), 0],
-                #      [0., 0., 0.0, 1]])
-
-                rad_z = np.deg2rad(120)
                 z_rotation = np.array(
-                    [[np.cos(rad_z), -np.sin(rad_z), 0., 0],
-                     [np.sin(rad_z), +np.cos(rad_z), 0.0, 0],
+                    [[np.cos(z_angle), -np.sin(z_angle), 0., 0],
+                     [np.sin(z_angle), +np.cos(z_angle), 0.0, 0],
                      [0., 0., 1.0, 0],
                      [0., 0., 0.0, 1]])
                 self.scene.set_pose(self.mesh, x_rotation)
                 camera_to_world = camera_to_world.flatten()
                 world_to_camera = world_to_camera.flatten()
-                viewer.Viewer(self.scene)
                 image, depth = self.renderer.render(
                     self.scene, flags=self.RGBA)
+                image = np.fliplr(image)
+                depth = np.fliplr(depth)
                 # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
                 image, alpha = split_alpha_channel(image)
                 x_min, y_min, x_max, y_max = compute_box_from_depth(depth, 0)
                 image = image[y_min:y_max, x_min:x_max]
-                image = cv2.resize(image, (128, 128), interpolation=cv2.INTER_LINEAR)
+                image = cv2.resize(image, (128, 128),
+                                   interpolation=cv2.INTER_LINEAR)
                 HSV = cv2.cvtColor(image, cv2.COLOR_BGR2HSV).astype(np.uint8)
                 H, S, V = HSV[:, :, 0], HSV[:, :, 1], HSV[:, :, 2]
                 S = (S*1.3).astype(np.uint8)
