@@ -126,21 +126,20 @@ class DictionaryView():
                 LINEMOD_cam_R_m2c = np.array(LINEMOD_cam_R_m2c).reshape(3, 3)
                 LINEMOD_cam_R_m2c[0:3, 2] = LINEMOD_cam_R_m2c[0:3, 2] * -1
                 LINEMOD_cam_R_m2c[2, 0:3] = LINEMOD_cam_R_m2c[2, 0:3] * -1
-                LINEMOD_cam_t_m2c = np.array(LINEMOD_cam_t_m2c) * -1
+                LINEMOD_cam_t_m2c = np.array(LINEMOD_cam_t_m2c)
                 LINEMOD_cam_t_m2c = LINEMOD_cam_t_m2c[np.newaxis, :]
                 camera_transform = np.hstack((LINEMOD_cam_R_m2c, LINEMOD_cam_t_m2c.T))
                 world_to_camera = np.vstack((camera_transform, np.array([0, 0, 0, 1])))
                 #####
                 # world_to_camera = np.array([[0.98339200, 0.05321840, -0.17351800, 40.71799858], [-0.08514910, -0.70902002, -0.70002902, -152.05616554], [-0.16028300, 0.70317698, -0.69271302, 973.69279588], [0, 0, 0, 1]])
                 # world_to_camera[:, 1] = world_to_camera[:, 1] * -1
-                # world_to_camera[:, 2] = world_to_camera[:, 2] * -1
-                # world_to_camera[1, 3] = world_to_camera[1, 3] * -1
-                # world_to_camera[2, 3] = world_to_camera[2, 3] * -1 # must
+                world_to_camera[2, 3] = world_to_camera[2, 3] * -1
+                world_to_camera[1, 3] = world_to_camera[1, 3] * -1 # must
                 camera_to_world = np.linalg.pinv(world_to_camera)
                 self.scene.set_pose(self.camera, camera_to_world)
                 self.scene.set_pose(self.light, camera_to_world)
-                
-                rad_180 = np.deg2rad(-270)
+
+                rad_180 = np.deg2rad(0)
                 x_rotation = np.array(
                     [[1, 0, 0., 0],
                      [0, +np.cos(rad_180), -np.sin(rad_180), 0],
