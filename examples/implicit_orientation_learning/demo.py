@@ -88,39 +88,44 @@ decoder = AutoEncoder((size, size, 3), latent_dimension, mode='decoder')
 decoder.load_weights(weights_path, by_name=True)
 inference = ImplicitRotationPredictor(encoder, decoder, measure, renderer)
 #0817, 0114, 0133 doesnt work
-IMAGE_PATH = ('/home/manummk95/Desktop/paz/paz/examples/efficientpose/'
-              'Linemod_preprocessed/data/08/rgb/0002.png')
 anno_path = ('/home/manummk95/Desktop/paz/paz/examples/efficientpose/'
              'Linemod_preprocessed/data/08/gt.yml')
-f_real = (fx + fy) / 2.0
-
 with open(anno_path, 'r') as f:
     file_contents = yaml.safe_load(f)
     f.close()
-# IMAGE_PATH = 'SimpleAutoencoder128_128_035_power_drill/original_images/image_010.png'
-anno_key = int(os.path.split(IMAGE_PATH)[1].split('.')[0])
-bbox = file_contents[anno_key][0]['obj_bb']
-x_min, y_min, W, H = bbox
-x_max = x_min + W
-y_max = y_min + H
+f_real = (fx + fy) / 2.0
 
-# ####### Compute focal length of pyrender camera ###
-f_syn = cam_H / (2 * np.tan(args.y_fov / 2))
-t_syn = args.distance
-image = load_image(IMAGE_PATH)
-image = image[y_min:y_max, x_min:x_max]
-image = cv2.resize(image, (128, 128), interpolation=cv2.INTER_LINEAR)
-output = inference(image, t_syn, f_syn, f_real, [x_min, y_min, x_max, y_max], K_real)
-print('Real z :{}'.format(file_contents[anno_key][0]['cam_t_m2c']))
-print('Estimated z :{}'.format(output['t_real_z']))
-print('Treal :{}'.format(output['t_reals']))
-print('Rreal :{}'.format(output['R_obj_2_cams'][0]))
-show_image(output['image'])
+outputs = []
+for i in range(1180):
+    image_ID = str(i).zfill(4)
+    IMAGE_PATH = ('/home/manummk95/Desktop/paz/paz/examples/efficientpose/'
+                  'Linemod_preprocessed/data/08/rgb/{}.png'.format(image_ID))
 
-output['image_path'] = IMAGE_PATH
+    # IMAGE_PATH = 'SimpleAutoencoder128_128_035_power_drill/original_images/image_010.png'
+    anno_key = int(os.path.split(IMAGE_PATH)[1].split('.')[0])
+    bbox = file_contents[anno_key][0]['obj_bb']
+    x_min, y_min, W, H = bbox
+    x_max = x_min + W
+    y_max = y_min + H
+
+    # ####### Compute focal length of pyrender camera ###
+    f_syn = cam_H / (2 * np.tan(args.y_fov / 2))
+    t_syn = args.distance
+    image = load_image(IMAGE_PATH)
+    image = image[max(0, y_min):y_max, max(0, x_min):x_max]
+    image = cv2.resize(image, (128, 128), interpolation=cv2.INTER_LINEAR)
+    output = inference(image, t_syn, f_syn, f_real, [x_min, y_min, x_max, y_max], K_real)
+    print('Real z :{}'.format(file_contents[anno_key][0]['cam_t_m2c']))
+    print('Estimated z :{}'.format(output['t_real_z']))
+    print('Treal :{}'.format(output['t_reals']))
+    print('Rreal :{}'.format(output['R_obj_2_cams'][0]))
+    # show_image(output['image'])
+
+    output['image_path'] = IMAGE_PATH
+    outputs.append(output)
 # Write outputs ###
 with open('pose_pred.pkl', 'wb') as f:
-    pickle.dump(output, f)
+    pickle.dump(outputs, f)
 
 # player = VideoPlayer((1280, 960), inference, camera=Camera(args.camera_id))
 # player.run()

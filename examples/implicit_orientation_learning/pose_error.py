@@ -210,23 +210,29 @@ if __name__ == '__main__':
         f.close()
 
     with open('pose_pred.pkl', 'rb') as f:
-        output_data = pickle.load(f)
+        output_datas = pickle.load(f)
         f.close()
-    t_preds = output_data['t_reals']
-    R_preds = output_data['R_obj_2_cams']
-    anno_key = int(os.path.split(output_data['image_path'])[1].split('.')[0])
-    r_true = np.array(file_contents[anno_key][0]['cam_R_m2c']).reshape(3, 3)
-    t_true = np.array(file_contents[anno_key][0]['cam_t_m2c'])
+    is_corrects = []
+    for output_data in output_datas:
+        t_preds = output_data['t_reals']
+        R_preds = output_data['R_obj_2_cams']
+        anno_key = int(os.path.split(output_data['image_path'])[1].split('.')[0])
+        r_true = np.array(file_contents[anno_key][0]['cam_R_m2c']).reshape(3, 3)
+        t_true = np.array(file_contents[anno_key][0]['cam_t_m2c'])
 
-    add_errors = []
-    for i in range(len(t_preds)):
-        r_pred = R_preds[i]
-        rotation = Rotation.from_matrix(r_pred)
-        euler_angles = rotation.as_euler('xyz', degrees=True)
-        euler_angles[0] = euler_angles[0] + 180
-        r_pred_new = Rotation.from_euler('xyz', euler_angles).as_matrix()
-        add_error = compute_ADD(
-            r_pred_new, t_preds[i], r_true, t_true, mesh_points)
-        add_errors.append(add_error)
-    is_correct = check_ADD(min(add_errors), 261.47178102, diameter_threshold=0.1)
-    print('')
+        add_errors = []
+        for i in range(len(t_preds)):
+            r_pred = R_preds[i]
+            rotation = Rotation.from_matrix(r_pred)
+            euler_angles = rotation.as_euler('xyz', degrees=True)
+            euler_angles[0] = euler_angles[0] + 180
+            # r_pred_new = Rotation.from_euler('xyz', euler_angles).as_matrix()
+            r_pred_new = np.eye(3, 3)
+            r_true = np.eye(3, 3)
+            add_error = compute_ADD(
+                r_pred_new, t_preds[i], r_true, t_true, mesh_points)
+            add_errors.append(add_error)
+        is_correct = check_ADD(min(add_errors), 261.47178102, diameter_threshold=0.1)
+        is_corrects.append(is_correct)
+    ADD = np.sum(is_corrects)/len(is_corrects)*100
+    print('ADD accuracy', ADD)
