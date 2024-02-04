@@ -124,22 +124,23 @@ class DictionaryView():
                 LINEMOD_cam_R_m2c = [0.98548597, -0.00825023, -0.16955499, -0.13048200, -0.67573500, -0.72550398, -0.10858900, 0.73709798, -0.66700399]
                 LINEMOD_cam_t_m2c = [27.85431770, -110.12161613, 1023.44225463]
                 LINEMOD_cam_R_m2c = np.array(LINEMOD_cam_R_m2c).reshape(3, 3)
-                LINEMOD_cam_R_m2c[:, -1] = LINEMOD_cam_R_m2c[:, -1]
-                LINEMOD_cam_t_m2c = np.array(LINEMOD_cam_t_m2c)
+                LINEMOD_cam_R_m2c[0:3, 2] = LINEMOD_cam_R_m2c[0:3, 2] * -1
+                LINEMOD_cam_R_m2c[2, 0:3] = LINEMOD_cam_R_m2c[2, 0:3] * -1
+                LINEMOD_cam_t_m2c = np.array(LINEMOD_cam_t_m2c) * -1
                 LINEMOD_cam_t_m2c = LINEMOD_cam_t_m2c[np.newaxis, :]
                 camera_transform = np.hstack((LINEMOD_cam_R_m2c, LINEMOD_cam_t_m2c.T))
                 world_to_camera = np.vstack((camera_transform, np.array([0, 0, 0, 1])))
                 #####
                 # world_to_camera = np.array([[0.98339200, 0.05321840, -0.17351800, 40.71799858], [-0.08514910, -0.70902002, -0.70002902, -152.05616554], [-0.16028300, 0.70317698, -0.69271302, 973.69279588], [0, 0, 0, 1]])
-                world_to_camera[:, 1] = world_to_camera[:, 1] * -1
-                world_to_camera[:, 2] = world_to_camera[:, 2] * -1
-                world_to_camera[1, 3] = world_to_camera[1, 3] * -1
-                world_to_camera[2, 3] = world_to_camera[2, 3] * -1 # must
+                # world_to_camera[:, 1] = world_to_camera[:, 1] * -1
+                # world_to_camera[:, 2] = world_to_camera[:, 2] * -1
+                # world_to_camera[1, 3] = world_to_camera[1, 3] * -1
+                # world_to_camera[2, 3] = world_to_camera[2, 3] * -1 # must
                 camera_to_world = np.linalg.pinv(world_to_camera)
                 self.scene.set_pose(self.camera, camera_to_world)
                 self.scene.set_pose(self.light, camera_to_world)
                 
-                rad_180 = np.deg2rad(180)
+                rad_180 = np.deg2rad(-270)
                 x_rotation = np.array(
                     [[1, 0, 0., 0],
                      [0, +np.cos(rad_180), -np.sin(rad_180), 0],
@@ -151,7 +152,7 @@ class DictionaryView():
                      [np.sin(z_angle), +np.cos(z_angle), 0.0, 0],
                      [0., 0., 1.0, 0],
                      [0., 0., 0.0, 1]])
-                self.scene.set_pose(self.mesh, z_rotation)
+                self.scene.set_pose(self.mesh, x_rotation)
                 camera_to_world = camera_to_world.flatten()
                 world_to_camera = world_to_camera.flatten()
                 viewer.Viewer(self.scene)
