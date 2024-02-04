@@ -39,7 +39,7 @@ parser.add_argument('-sp', '--stop_patience', default=7, type=int,
                     help='Number of epochs before doing early stopping')
 parser.add_argument('-pp', '--plateau_patience', default=3, type=int,
                     help='Number of epochs before reducing learning rate')
-parser.add_argument('-e', '--max_num_epochs', default=2, type=int,
+parser.add_argument('-e', '--max_num_epochs', default=60, type=int,
                     help='Maximum number of epochs before finishing')
 parser.add_argument('-st', '--steps_per_epoch', default=1000, type=int,
                     help='Steps per epoch')
@@ -88,13 +88,13 @@ processor = DomainRandomization(
     renderer, image_shape, image_paths, args.num_occlusions)
 
 sequence = GeneratingSequence(processor, args.batch_size, args.steps_per_epoch)
-# import matplotlib.pyplot as plt
-# for _ in range(15):
-#     seq = sequence[0]
-#     plt.imshow(seq[0]['input_image'][0])
-#     plt.figure()
-#     plt.imshow(seq[1]['label_image'][0])
-#     plt.show()
+import matplotlib.pyplot as plt
+for _ in range(5):
+    seq = sequence[0]
+    plt.imshow(seq[0]['input_image'][0])
+    plt.figure()
+    plt.imshow(seq[1]['label_image'][0])
+    plt.show()
 
 # making directory for saving model weights and logs
 model_name = '_'.join([model.name, str(latent_dimension), args.class_name])

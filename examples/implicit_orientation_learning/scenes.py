@@ -111,16 +111,41 @@ class DictionaryView():
 
     def render(self):
         dictionary_data = []
-        for theta_arg, theta in enumerate(self.thetas):
+        for theta_arg, theta in enumerate(self.thetas[:-1]):
             for phi_arg, z_angle in enumerate(self.obj_z_rotation):
                 x = self.distance * np.sin(theta) * np.cos(0)
                 y = self.distance * np.sin(theta) * np.sin(0)
                 z = self.distance * np.cos(theta)
                 matrices = compute_modelview_matrices(
-                    np.array([x, y, z]), self.world_origin, roll=-np.pi/2) #x z y works
+                    np.array([x, y, z]), self.world_origin)
                 camera_to_world, world_to_camera = matrices
+
+                ######
+                LINEMOD_cam_R_m2c = [0.98548597, -0.00825023, -0.16955499, -0.13048200, -0.67573500, -0.72550398, -0.10858900, 0.73709798, -0.66700399]
+                LINEMOD_cam_t_m2c = [27.85431770, -110.12161613, 1023.44225463]
+                LINEMOD_cam_R_m2c = np.array(LINEMOD_cam_R_m2c).reshape(3, 3)
+                LINEMOD_cam_R_m2c[:, -1] = LINEMOD_cam_R_m2c[:, -1]
+                LINEMOD_cam_t_m2c = np.array(LINEMOD_cam_t_m2c)
+                LINEMOD_cam_t_m2c = LINEMOD_cam_t_m2c[np.newaxis, :]
+                camera_transform = np.hstack((LINEMOD_cam_R_m2c, LINEMOD_cam_t_m2c.T))
+                world_to_camera = np.vstack((camera_transform, np.array([0, 0, 0, 1])))
+                #####
+                # world_to_camera = np.array([[0.98339200, 0.05321840, -0.17351800, 40.71799858], [-0.08514910, -0.70902002, -0.70002902, -152.05616554], [-0.16028300, 0.70317698, -0.69271302, 973.69279588], [0, 0, 0, 1]])
+                world_to_camera[:, 1] = world_to_camera[:, 1] * -1
+                world_to_camera[:, 2] = world_to_camera[:, 2] * -1
+                world_to_camera[1, 3] = world_to_camera[1, 3] * -1
+                world_to_camera[2, 3] = world_to_camera[2, 3] * -1 # must
+                camera_to_world = np.linalg.pinv(world_to_camera)
                 self.scene.set_pose(self.camera, camera_to_world)
                 self.scene.set_pose(self.light, camera_to_world)
+                
+                rad_180 = np.deg2rad(180)
+                x_rotation = np.array(
+                    [[1, 0, 0., 0],
+                     [0, +np.cos(rad_180), -np.sin(rad_180), 0],
+                     [0., np.sin(rad_180), np.cos(rad_180), 0],
+                     [0., 0., 0.0, 1]])
+
                 z_rotation = np.array(
                     [[np.cos(z_angle), -np.sin(z_angle), 0., 0],
                      [np.sin(z_angle), +np.cos(z_angle), 0.0, 0],
@@ -129,7 +154,7 @@ class DictionaryView():
                 self.scene.set_pose(self.mesh, z_rotation)
                 camera_to_world = camera_to_world.flatten()
                 world_to_camera = world_to_camera.flatten()
-                # viewer.Viewer(self.scene)
+                viewer.Viewer(self.scene)
                 image, depth = self.renderer.render(
                     self.scene, flags=self.RGBA)
                 # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)

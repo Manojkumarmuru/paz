@@ -4,6 +4,7 @@ import argparse
 import yaml
 import numpy as np
 import cv2
+import pickle
 from tensorflow.keras.utils import get_file
 # from sklearn.metrics.pairwise import euclidean_distances as measure
 from sklearn.metrics.pairwise import cosine_similarity as measure
@@ -114,5 +115,11 @@ print('Real z :{}'.format(file_contents[anno_key][0]['cam_t_m2c']))
 print('Estimated z :{}'.format(output['t_real_z']))
 print('Treal :{}'.format(output['t_reals']))
 show_image(output['image'])
+
+output['image_path'] = IMAGE_PATH
+# Write outputs ###
+with open('pose_pred.pkl', 'wb') as f:
+    pickle.dump(output, f)
+
 # player = VideoPlayer((1280, 960), inference, camera=Camera(args.camera_id))
 # player.run()
