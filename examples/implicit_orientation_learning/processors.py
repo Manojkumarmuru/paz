@@ -19,7 +19,8 @@ class MakeDictionary(Processor):
             dictionary[sample_arg] = (image, sample['bb_syn'],
                                       sample['world_to_camera'],
                                       sample['mesh_2_world'],
-                                      sample['t_syn'])
+                                      sample['t_syn'],
+                                      sample['mesh2_cam_linemod'])
             # dictionary[sample_arg]['raw_im_dims'] = sample['raw_im_dims']
         dictionary['latent_vectors'] = latent_vectors
         return dictionary

@@ -89,7 +89,7 @@ decoder.load_weights(weights_path, by_name=True)
 inference = ImplicitRotationPredictor(encoder, decoder, measure, renderer)
 #0817, 0114, 0133 doesnt work
 IMAGE_PATH = ('/home/manummk95/Desktop/paz/paz/examples/efficientpose/'
-              'Linemod_preprocessed/data/08/rgb/0000.png')
+              'Linemod_preprocessed/data/08/rgb/0002.png')
 anno_path = ('/home/manummk95/Desktop/paz/paz/examples/efficientpose/'
              'Linemod_preprocessed/data/08/gt.yml')
 f_real = (fx + fy) / 2.0
@@ -114,6 +114,7 @@ output = inference(image, t_syn, f_syn, f_real, [x_min, y_min, x_max, y_max], K_
 print('Real z :{}'.format(file_contents[anno_key][0]['cam_t_m2c']))
 print('Estimated z :{}'.format(output['t_real_z']))
 print('Treal :{}'.format(output['t_reals']))
+print('Rreal :{}'.format(output['R_obj_2_cams'][0]))
 show_image(output['image'])
 
 output['image_path'] = IMAGE_PATH

@@ -83,9 +83,8 @@ class ImplicitRotationPredictor(Processor):
             t_real_zs.append(t_real_z)
 
             # Compute rotation matrix
-            world_to_cam = closest_images[i][2]
-            mesh_to_world = closest_images[i][3]
-            obj_to_cam_init = world_to_cam.reshape(4, 4) @ mesh_to_world
+            mesh2cam_linemod = closest_images[i][5]
+            obj_to_cam_init = mesh2cam_linemod
             t_real_x, t_real_y, t_real_z = t_real
             alpha_x = -np.arctan(t_real_y/t_real_z)
             alpha_y = np.arctan(t_real_x / np.sqrt(t_real_z**2 + t_real_y**2))

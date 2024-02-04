@@ -121,10 +121,10 @@ class DictionaryView():
                 camera_to_world, world_to_camera = matrices
 
                 ######
-                LINEMOD_cam_R_m2c = [0.89572400, 0.32865000, -0.29944599, 0.02470270, -0.70924699, -0.70452702, -0.44392401, 0.62366402, -0.64340800]
-                LIENMOD_cam_t_m2c = [52.69479096, 80.22896910, 983.86871058]
-                world_to_camera = linemod_to_pyrender_cam_transform(
-                    LINEMOD_cam_R_m2c, LIENMOD_cam_t_m2c)
+                # LINEMOD_cam_R_m2c = [0.89572400, 0.32865000, -0.29944599, 0.02470270, -0.70924699, -0.70452702, -0.44392401, 0.62366402, -0.64340800]
+                # LIENMOD_cam_t_m2c = [52.69479096, 80.22896910, 983.86871058]
+                # world_to_camera = linemod_to_pyrender_cam_transform(
+                #     LINEMOD_cam_R_m2c, LIENMOD_cam_t_m2c)
                 linemod = pyrender_to_linemod(world_to_camera)
                 #####
 
@@ -132,19 +132,12 @@ class DictionaryView():
                 self.scene.set_pose(self.camera, camera_to_world)
                 self.scene.set_pose(self.light, camera_to_world)
 
-                rad_x = np.deg2rad(180)
-                x_rotation = np.array(
-                    [[1, 0, 0., 0],
-                     [0, +np.cos(rad_x), -np.sin(rad_x), 0],
-                     [0., np.sin(rad_x), np.cos(rad_x), 0],
-                     [0., 0., 0.0, 1]])
-
                 z_rotation = np.array(
                     [[np.cos(z_angle), -np.sin(z_angle), 0., 0],
                      [np.sin(z_angle), +np.cos(z_angle), 0.0, 0],
                      [0., 0., 1.0, 0],
                      [0., 0., 0.0, 1]])
-                self.scene.set_pose(self.mesh, x_rotation)
+                self.scene.set_pose(self.mesh, z_rotation)
                 camera_to_world = camera_to_world.flatten()
                 world_to_camera = world_to_camera.flatten()
                 image, depth = self.renderer.render(
@@ -168,13 +161,20 @@ class DictionaryView():
                 image = cv2.cvtColor(HSV_composed, cv2.COLOR_HSV2RGB)
                 # image = np.power(image, 1/1.2).clip(0,255).astype(np.uint8)
                 matrices = np.vstack([world_to_camera, camera_to_world])
+
+                ####
+                cam2_mesh = np.linalg.pinv(z_rotation) @  camera_to_world.reshape(4, 4)
+                mesh2_cam = np.linalg.pinv(cam2_mesh)
+                mesh2_cam_linemod = pyrender_to_linemod(mesh2_cam)[:3, :3]
+
                 sample = {'image': image,
                           'alpha': alpha,
                           'depth': depth, 'matrices': matrices,
                           'bb_syn': [x_min, y_min, x_max, y_max],
                           'world_to_camera': world_to_camera,
                           'mesh_2_world': z_rotation,
-                          't_syn': [x, y, z]}
+                          't_syn': [x, y, z],
+                          'mesh2_cam_linemod': mesh2_cam_linemod}
                 dictionary_data.append(sample)
         return dictionary_data
 
