@@ -125,6 +125,7 @@ class DictionaryView():
                 LIENMOD_cam_t_m2c = [52.69479096, 80.22896910, 983.86871058]
                 world_to_camera = linemod_to_pyrender_cam_transform(
                     LINEMOD_cam_R_m2c, LIENMOD_cam_t_m2c)
+                linemod = pyrender_to_linemod(world_to_camera)
                 #####
 
                 camera_to_world = np.linalg.pinv(world_to_camera)
@@ -188,6 +189,14 @@ def linemod_to_pyrender_cam_transform(LINEMOD_cam_R_m2c, LINEMOD_cam_t_m2c):
     world_to_camera = np.vstack((camera_transform, np.array(
         [0, 0, 0, 1])))
     return world_to_camera
+
+
+def pyrender_to_linemod(pyrender_matrix):
+    linemod = pyrender_matrix.copy()
+    linemod[0:3, 0] = linemod[0:3, 0] * -1
+    linemod[0:3, 1] = linemod[0:3, 1] * -1
+    linemod[:3, 3] = linemod[:3, 3] * -1
+    return linemod # This is inlinemod coordinate convention
 
 
 def compute_box_from_mask(mask, mask_value):
