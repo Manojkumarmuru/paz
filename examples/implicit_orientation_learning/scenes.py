@@ -103,7 +103,7 @@ class DictionaryView():
         self.distance = distance
         # 0.1 values are to avoid gimbal lock
         theta_max = np.pi / 2.0 if top_only else np.pi
-        self.thetas = np.linspace(np.pi/2, 0.00, theta_steps)
+        self.thetas = np.linspace(np.pi/2, np.pi, theta_steps)
         # self.thetas = np.linspace(0, np.pi/2, theta_steps) # This theta works
         self.obj_z_rotation = np.linspace(0.00, 2 * np.pi, phi_steps)
         self.renderer = OffscreenRenderer(*viewport_size)
@@ -121,11 +121,11 @@ class DictionaryView():
                 camera_to_world, world_to_camera = matrices
 
                 ######
-                # LINEMOD_cam_R_m2c = [0.89572400, 0.32865000, -0.29944599, 0.02470270, -0.70924699, -0.70452702, -0.44392401, 0.62366402, -0.64340800]
-                # LIENMOD_cam_t_m2c = [52.69479096, 80.22896910, 983.86871058]
+                # LINEMOD_cam_R_m2c = [-0.12247500, -0.96766800, 0.22049400, -0.84350997, -0.01557500, -0.53688800, 0.52296400, -0.25174400, -0.81432998]
+                # LIENMOD_cam_t_m2c = [13.15028343, -70.31899864, 623.30181579]
                 # world_to_camera = linemod_to_pyrender_cam_transform(
                 #     LINEMOD_cam_R_m2c, LIENMOD_cam_t_m2c)
-                linemod = pyrender_to_linemod(world_to_camera)
+                # linemod = pyrender_to_linemod(world_to_camera)
                 #####
 
                 camera_to_world = np.linalg.pinv(world_to_camera)
@@ -137,13 +137,22 @@ class DictionaryView():
                      [np.sin(z_angle), +np.cos(z_angle), 0.0, 0],
                      [0., 0., 1.0, 0],
                      [0., 0., 0.0, 1]])
-                self.scene.set_pose(self.mesh, z_rotation)
+
+                x_angle = np.deg2rad(180)
+                x_rotation = np.array(
+                    [[1, 0, 0., 0],
+                     [0, +np.cos(x_angle), -np.sin(x_angle), 0],
+                     [0., np.sin(x_angle), +np.cos(x_angle), 0],
+                     [0., 0., 0.0, 1]])
+                self.scene.set_pose(self.mesh, x_rotation @ z_rotation)
                 camera_to_world = camera_to_world.flatten()
                 world_to_camera = world_to_camera.flatten()
                 image, depth = self.renderer.render(
                     self.scene, flags=self.RGBA)
                 image = np.fliplr(image)
                 depth = np.fliplr(depth)
+                # image = np.flipud(image)
+                # depth = np.flipud(depth)
                 # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
                 image, alpha = split_alpha_channel(image)
                 x_min, y_min, x_max, y_max = compute_box_from_depth(depth, 0)
@@ -163,7 +172,7 @@ class DictionaryView():
                 matrices = np.vstack([world_to_camera, camera_to_world])
 
                 ####
-                cam2_mesh = np.linalg.pinv(z_rotation) @  camera_to_world.reshape(4, 4)
+                cam2_mesh = np.linalg.pinv(x_rotation @ z_rotation) @  camera_to_world.reshape(4, 4)
                 mesh2_cam = np.linalg.pinv(cam2_mesh)
                 mesh2_cam_linemod = pyrender_to_linemod(mesh2_cam)[:3, :3]
 
@@ -193,8 +202,9 @@ def linemod_to_pyrender_cam_transform(LINEMOD_cam_R_m2c, LINEMOD_cam_t_m2c):
 
 def pyrender_to_linemod(pyrender_matrix):
     linemod = pyrender_matrix.copy()
+    linemod[0:3, 2] = linemod[0:3, 2] * -1
+    linemod[0:3, 1] = linemod[0:3, 1]
     linemod[0:3, 0] = linemod[0:3, 0] * -1
-    linemod[0:3, 1] = linemod[0:3, 1] * -1
     linemod[:3, 3] = linemod[:3, 3] * -1
     return linemod # This is inlinemod coordinate convention
 

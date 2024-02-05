@@ -225,7 +225,7 @@ if __name__ == '__main__':
             r_pred = R_preds[i]
             rotation = Rotation.from_matrix(r_pred)
             euler_angles = rotation.as_euler('xyz', degrees=True)
-            euler_angles[0] = euler_angles[0] + 180
+            # euler_angles[0] = 180 - euler_angles[0]
             r_pred_new = Rotation.from_euler('xyz', euler_angles).as_matrix()
             # r_pred_new = np.eye(3, 3)
             # r_true = np.eye(3, 3)

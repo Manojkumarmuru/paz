@@ -90,7 +90,7 @@ def get_look_at_transform(camera_position, target_position):
     """
     camera_direction = camera_position - target_position
     camera_direction = camera_direction / np.linalg.norm(camera_direction)
-    world_up = np.array([0.0, 0.0, 1.0])
+    world_up = np.array([0.0, 0.0, -1.0])
     camera_right = np.cross(world_up, camera_direction)
     camera_right = camera_right / np.linalg.norm(camera_right)
     camera_up = np.cross(camera_direction, camera_right)
