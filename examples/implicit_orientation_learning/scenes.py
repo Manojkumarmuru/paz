@@ -45,7 +45,7 @@ class SingleView():
 
     def _sample_parameters(self):
         distance = sample_uniformly(self.distance)
-        theta = np.random.uniform(np.pi/2, 0)
+        theta = np.random.uniform(np.pi/2, np.pi)
         x = distance * np.sin(theta) * np.cos(0)
         y = distance * np.sin(theta) * np.sin(0)
         z = distance * np.cos(theta)
@@ -58,7 +58,7 @@ class SingleView():
     def render(self):
         camera_origin, intensity = self._sample_parameters()
         camera_to_world, world_to_camera = compute_modelview_matrices(
-            camera_origin, self.world_origin, -np.pi/2, self.shift)
+            camera_origin, self.world_origin, None, self.shift)
         self.light.light.intensity = intensity
         self.scene.set_pose(self.camera, camera_to_world)
         z_angle = np.random.uniform(0, 2*np.pi)
@@ -67,11 +67,19 @@ class SingleView():
                      [np.sin(z_angle), +np.cos(z_angle), 0.0, 0],
                      [0., 0., 1.0, 0],
                      [0., 0., 0.0, 1]])
-        self.scene.set_pose(self.mesh, z_rotation)
+        x_angle = np.deg2rad(180)
+        x_rotation = np.array(
+            [[1, 0, 0., 0],
+                [0, +np.cos(x_angle), -np.sin(x_angle), 0],
+                [0., np.sin(x_angle), +np.cos(x_angle), 0],
+                [0., 0., 0.0, 1]])
+        self.scene.set_pose(self.mesh, x_rotation @ z_rotation)
         self.scene.set_pose(self.light, camera_to_world)
         image, depth = self.renderer.render(self.scene, flags=self.RGBA)
         image, alpha = split_alpha_channel(image)
         x_min, y_min, x_max, y_max = compute_box_from_mask(alpha, 255)
+        square_bb = make_bb_square([x_min, y_min, x_max, y_max])
+        x_min, y_min, x_max, y_max = square_bb
         image = image[y_min:y_max, x_min:x_max]
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         alpha = alpha[y_min:y_max, x_min:x_max]
@@ -91,7 +99,7 @@ class DictionaryView():
     """
     def __init__(self, filepath, viewport_size=(128, 128),
                  y_fov=3.14159 / 4., distance=0.30, top_only=False,
-                 light=5.0, theta_steps=10, phi_steps=10,):
+                 light=5.0, theta_steps=10, phi_steps=20,):
         self.scene = Scene(bg_color=[0, 0, 0], ambient_light=[0.1255, 0.1255, 0.1255])
         # Bring camera as close to linemod camera
         self.camera = self.scene.add(PerspectiveCamera(
@@ -156,6 +164,8 @@ class DictionaryView():
                 # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
                 image, alpha = split_alpha_channel(image)
                 x_min, y_min, x_max, y_max = compute_box_from_depth(depth, 0)
+                square_bb = make_bb_square([x_min, y_min, x_max, y_max])
+                x_min, y_min, x_max, y_max = square_bb
                 image = image[y_min:y_max, x_min:x_max]
                 image = cv2.resize(image, (128, 128),
                                    interpolation=cv2.INTER_LINEAR)
@@ -186,6 +196,20 @@ class DictionaryView():
                           'mesh2_cam_linemod': mesh2_cam_linemod}
                 dictionary_data.append(sample)
         return dictionary_data
+
+
+def make_bb_square(box):
+    x_min, y_min, x_max, y_max = box
+    H = y_max-y_min
+    W = x_max-x_min
+    max_dim = max(H, W)
+    cx = (x_min + x_max) / 2.0
+    cy = (y_min + y_max) / 2.0
+    new_x_min = cx - max_dim/2.0
+    new_x_max = cx + max_dim/2.0
+    new_y_min = cy - max_dim/2.0
+    new_y_max = cy + max_dim/2.0
+    return np.array([new_x_min, new_y_min, new_x_max, new_y_max]).astype(np.uint)
 
 
 def linemod_to_pyrender_cam_transform(LINEMOD_cam_R_m2c, LINEMOD_cam_t_m2c):

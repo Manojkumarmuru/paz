@@ -353,7 +353,7 @@ class BlendRandomCroppedBackground(Processor):
         background_paths: List of strings. Each element of the list is a
             full-path to an image used for cropping a background.
     """
-    def __init__(self, background_paths, yaml_path):
+    def __init__(self, background_paths, yaml_path, split_file_path):
         super(BlendRandomCroppedBackground, self).__init__()
         if not isinstance(background_paths, list):
             raise ValueError('``background_paths`` must be list')
@@ -365,10 +365,15 @@ class BlendRandomCroppedBackground(Processor):
             file_contents = yaml.safe_load(f)
             f.close()
         self.file_contents = file_contents
+        self.split_file = open(split_file_path, 'r')
+        self.split_file_content = self.split_file.read()
+        self.split_file_content = self.split_file_content.split('\n')[:-1]
 
     def call(self, image):
-        random_arg = np.random.randint(0, len(self.background_paths))
-        background_path = self.background_paths[random_arg]
+        base_path = '/'.join(self.background_paths[0].split('/')[:-1])
+        random_arg = np.random.randint(0, len(self.split_file_content))
+        background_path = base_path + '/' + self.split_file_content[random_arg] + '.png'
+        # background_path = self.background_paths[random_arg]
         background = load_image(background_path)
         background = cv2.cvtColor(background, cv2.COLOR_RGB2BGR)
         # bbox_ape = self.file_contents[random_arg][0]['obj_bb']

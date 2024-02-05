@@ -57,7 +57,7 @@ class RandomizeRenderedImage(SequentialProcessor):
     def __init__(self, image_paths, num_occlusions=1, max_radius_scale=0.5):
         super(RandomizeRenderedImage, self).__init__()
         self.add(pr.ConcatenateAlphaMask())
-        self.add(pr.BlendRandomCroppedBackground(image_paths, '/home/manummk95/Desktop/paz/paz/examples/efficientpose/Linemod_preprocessed/data/01/gt.yml'))
+        self.add(pr.BlendRandomCroppedBackground(image_paths, '/home/manummk95/Desktop/paz/paz/examples/efficientpose/Linemod_preprocessed/data/01/gt.yml', '/home/manummk95/Desktop/paz/paz/examples/efficientpose/Linemod_preprocessed/data/01/train.txt'))
         for arg in range(num_occlusions):
             self.add(pr.AddOcclusion(max_radius_scale))
         self.add(pr.RandomImageBlur())

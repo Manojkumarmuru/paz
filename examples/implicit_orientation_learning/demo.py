@@ -11,6 +11,7 @@ from sklearn.metrics.pairwise import cosine_similarity as measure
 from paz.backend.camera import VideoPlayer, Camera
 from paz.backend.image import load_image, show_image
 from scenes import DictionaryView
+from scenes import make_bb_square
 
 from model import AutoEncoder
 from pipelines import ImplicitRotationPredictor
@@ -112,7 +113,9 @@ for i in range(1180):
     f_syn = cam_H / (2 * np.tan(args.y_fov / 2))
     t_syn = args.distance
     image = load_image(IMAGE_PATH)
-    image = image[max(0, y_min):y_max, max(0, x_min):x_max]
+    square_bbox = make_bb_square([x_min, y_min, x_max, y_max])
+    x_min, y_min, x_max, y_max = square_bbox
+    image = image[y_min:y_max, x_min:x_max]
     image = cv2.resize(image, (128, 128), interpolation=cv2.INTER_LINEAR)
     output = inference(image, t_syn, f_syn, f_real, [x_min, y_min, x_max, y_max], K_real)
     print('Real z :{}'.format(file_contents[anno_key][0]['cam_t_m2c']))
