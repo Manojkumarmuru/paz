@@ -187,8 +187,8 @@ class DictionaryView():
                 mesh2_cam = np.linalg.pinv(cam2_mesh)
                 mesh2_cam_linemod = pyrender_to_linemod(mesh2_cam)[:3, :3]
                 cv2.imwrite('dict_images/dict_{}.png'.format(image_arg), image)
-                sample = {'alpha': alpha,
-                          'depth': depth, 'matrices': matrices,
+                sample = {
+                          'matrices': matrices,
                           'bb_syn': [x_min, y_min, x_max, y_max],
                           'world_to_camera': world_to_camera,
                           'mesh_2_world': z_rotation,
