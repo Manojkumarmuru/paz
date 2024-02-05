@@ -35,16 +35,16 @@ class ImplicitRotationPredictor(Processor):
     def call(self, image, t_syn, f_syn, f_real, bb_real, K_real):
         latent_vector, closest_images = self.encoder(image)
         latent_vector = latent_vector
-        self.show_closest_image1(closest_images[0][0])
-        self.show_closest_image2(closest_images[1][0])
-        self.show_closest_image3(closest_images[2][0])
-        self.show_closest_image4(closest_images[3][0])
-        self.show_closest_image5(closest_images[4][0])
-        self.show_closest_image6(closest_images[5][0])
-        self.show_closest_image7(closest_images[6][0])
-        self.show_closest_image8(closest_images[7][0])
-        self.show_closest_image9(closest_images[8][0])
-        self.show_closest_image10(closest_images[9][0])
+        self.show_closest_image1(closest_images[0]['image'])
+        self.show_closest_image2(closest_images[1]['image'])
+        self.show_closest_image3(closest_images[2]['image'])
+        self.show_closest_image4(closest_images[3]['image'])
+        self.show_closest_image5(closest_images[4]['image'])
+        self.show_closest_image6(closest_images[5]['image'])
+        self.show_closest_image7(closest_images[6]['image'])
+        self.show_closest_image8(closest_images[7]['image'])
+        self.show_closest_image9(closest_images[8]['image'])
+        self.show_closest_image10(closest_images[9]['image'])
         decoded_image = self.decoder(latent_vector[0])
         t_real_zs, t_reals, R_obj_2_cams = self.compute_t_real(
             image, t_syn, f_syn, f_real, closest_images, bb_real, K_real)
@@ -66,14 +66,14 @@ class ImplicitRotationPredictor(Processor):
         K_syn = np.array([[f_syn, 0, 0], [0, f_syn, 0], [0, 0, 1]])
         R_obj_2_cams = []
         for i in range(len(closest_images)):
-            img = closest_images[i][0]
-            x_min, y_min, x_max, y_max = closest_images[i][1]
+            img = closest_images[i]['image']
+            x_min, y_min, x_max, y_max = closest_images[i]['bb_syn']
             syn_diag = np.sqrt((x_max - x_min) ** 2 + (y_max - y_min) ** 2)
             t_real_z = t_syn_z * (syn_diag/real_diag) * (f_real/f_syn)
-            xc_syn = ((closest_images[i][1][0] + closest_images[i][1][2])/2.0 -
-                      (640/2.0))
-            yc_syn = ((closest_images[i][1][1] + closest_images[i][1][3])/2.0 -
-                      (480/2.0))
+            xc_syn = ((closest_images[i]['bb_syn'][0] +
+                       closest_images[i]['bb_syn'][2])/2.0 - (640/2.0))
+            yc_syn = ((closest_images[i]['bb_syn'][1] +
+                       closest_images[i]['bb_syn'][3])/2.0 - (480/2.0))
             bb_syn_c = np.array([[xc_syn, yc_syn, 1]])
             delta_t = (t_real_z * np.linalg.pinv(K_real) @ bb_real_c.T -
                        t_syn_z * np.linalg.pinv(K_syn) @ bb_syn_c.T)
@@ -83,7 +83,7 @@ class ImplicitRotationPredictor(Processor):
             t_real_zs.append(t_real_z)
 
             # Compute rotation matrix
-            mesh2cam_linemod = closest_images[i][5]
+            mesh2cam_linemod = closest_images[i]['mesh2_cam_linemod']
             obj_to_cam_init = mesh2cam_linemod
             t_real_x, t_real_y, t_real_z = t_real
             alpha_x = -np.arctan(t_real_y/t_real_z)

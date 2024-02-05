@@ -115,7 +115,7 @@ for i in range(1180):
     image = load_image(IMAGE_PATH)
     square_bbox = make_bb_square([x_min, y_min, x_max, y_max])
     x_min, y_min, x_max, y_max = square_bbox
-    image = image[y_min:y_max, x_min:x_max]
+    image = image[max(0, y_min):max(0, y_max), max(x_min, 0):max(x_max, 0)]
     image = cv2.resize(image, (128, 128), interpolation=cv2.INTER_LINEAR)
     output = inference(image, t_syn, f_syn, f_real, [x_min, y_min, x_max, y_max], K_real)
     print('Real z :{}'.format(file_contents[anno_key][0]['cam_t_m2c']))
@@ -123,7 +123,6 @@ for i in range(1180):
     print('Treal :{}'.format(output['t_reals']))
     print('Rreal :{}'.format(output['R_obj_2_cams'][0]))
     # show_image(output['image'])
-
     output['image_path'] = IMAGE_PATH
     outputs.append(output)
 # Write outputs ###

@@ -209,7 +209,7 @@ def make_bb_square(box):
     new_x_max = cx + max_dim/2.0
     new_y_min = cy - max_dim/2.0
     new_y_max = cy + max_dim/2.0
-    return np.array([new_x_min, new_y_min, new_x_max, new_y_max]).astype(np.uint)
+    return np.array([new_x_min, new_y_min, new_x_max, new_y_max]).astype(int)
 
 
 def linemod_to_pyrender_cam_transform(LINEMOD_cam_R_m2c, LINEMOD_cam_t_m2c):
