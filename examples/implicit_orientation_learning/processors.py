@@ -1,6 +1,7 @@
 from paz.abstract import Processor
 import numpy as np
 from operator import itemgetter
+import cv2
 
 
 class MakeDictionary(Processor):
@@ -14,7 +15,7 @@ class MakeDictionary(Processor):
         data = self.renderer.render()
         latent_vectors = np.zeros((len(data), self.latent_dimension))
         for sample_arg, sample in enumerate(data):
-            image = sample['image']
+            image = cv2.imread('dict_images/dict_{}.png'.format(sample_arg))
             latent_vectors[sample_arg] = self.encoder(image)
         data.append(latent_vectors)
         return data
@@ -31,5 +32,9 @@ class MeasureSimilarity(Processor):
         measurements = self.measure(latent_vectors, latent_vector)
         k = 10
         top_k = list(np.argsort(measurements, axis=0)[-k:, 0])
-        closest_images = [self.dictionary[top] for top in top_k]
-        return latent_vector, closest_images
+        closest_images = []
+        for top_k_elem in top_k:
+            close_images = cv2.imread('dict_images/dict_{}.png'.format(top_k_elem))
+            closest_images.append(close_images)
+        closest_images_data = [self.dictionary[top] for top in top_k]
+        return latent_vector, closest_images_data, closest_images

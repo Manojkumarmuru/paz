@@ -78,9 +78,9 @@ renderer = DictionaryView(
     args.distance, bool(args.top_only), args.light, args.theta_steps,
     args.phi_steps)
 dict_images = renderer.render()
-for i in range(len(dict_images)):
-    img = dict_images[i]['image']
-    cv2.imwrite('dict_images/img_{}.png'.format(i), img)
+# for i in range(len(dict_images)):
+#     img = dict_images[i]['image']
+#     cv2.imwrite('dict_images/img_{}.png'.format(i), img)
 
 
 encoder = AutoEncoder((size, size, 3), latent_dimension, mode='encoder')
@@ -122,7 +122,7 @@ for i in range(1180):
     print('Estimated z :{}'.format(output['t_real_z']))
     print('Treal :{}'.format(output['t_reals']))
     print('Rreal :{}'.format(output['R_obj_2_cams'][0]))
-    # show_image(output['image'])
+    show_image(output['image'])
     output['image_path'] = IMAGE_PATH
     outputs.append(output)
 # Write outputs ###

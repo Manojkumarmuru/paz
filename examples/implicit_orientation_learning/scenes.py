@@ -119,6 +119,7 @@ class DictionaryView():
 
     def render(self):
         dictionary_data = []
+        image_arg = 0
         for theta_arg, theta in enumerate(self.thetas[:-1]):
             for phi_arg, z_angle in enumerate(self.obj_z_rotation):
                 x = self.distance * np.sin(theta) * np.cos(0)
@@ -185,9 +186,8 @@ class DictionaryView():
                 cam2_mesh = np.linalg.pinv(x_rotation @ z_rotation) @  camera_to_world.reshape(4, 4)
                 mesh2_cam = np.linalg.pinv(cam2_mesh)
                 mesh2_cam_linemod = pyrender_to_linemod(mesh2_cam)[:3, :3]
-
-                sample = {'image': image,
-                          'alpha': alpha,
+                cv2.imwrite('dict_images/dict_{}.png'.format(image_arg), image)
+                sample = {'alpha': alpha,
                           'depth': depth, 'matrices': matrices,
                           'bb_syn': [x_min, y_min, x_max, y_max],
                           'world_to_camera': world_to_camera,
@@ -195,6 +195,7 @@ class DictionaryView():
                           't_syn': [x, y, z],
                           'mesh2_cam_linemod': mesh2_cam_linemod}
                 dictionary_data.append(sample)
+                image_arg = image_arg + 1
         return dictionary_data
 
 
