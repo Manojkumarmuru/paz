@@ -39,7 +39,7 @@ parser.add_argument('-sp', '--stop_patience', default=7, type=int,
                     help='Number of epochs before doing early stopping')
 parser.add_argument('-pp', '--plateau_patience', default=3, type=int,
                     help='Number of epochs before reducing learning rate')
-parser.add_argument('-e', '--max_num_epochs', default=2, type=int,
+parser.add_argument('-e', '--max_num_epochs', default=50, type=int,
                     help='Maximum number of epochs before finishing')
 parser.add_argument('-st', '--steps_per_epoch', default=1000, type=int,
                     help='Steps per epoch')

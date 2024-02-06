@@ -199,6 +199,12 @@ class EvaluatePoseError(Callback):
                 print('Estimated ADI error:', average_ADI)
 
 
+def angular_distance(mat1, mat2):
+    trace_product = np.trace(np.dot(mat1.T, mat2))
+    angle = np.arccos((trace_product - 1) / 2.0)
+    return np.degrees(angle)
+
+
 if __name__ == '__main__':
     anno_path = ('/home/manummk95/Desktop/paz/paz/examples/efficientpose/'
                  'Linemod_preprocessed/data/08/gt.yml')
@@ -213,7 +219,7 @@ if __name__ == '__main__':
         output_datas = pickle.load(f)
         f.close()
     is_corrects = []
-    for output_data in output_datas:
+    for idx, output_data in enumerate(output_datas):
         t_preds = output_data['t_reals']
         R_preds = output_data['R_obj_2_cams']
         anno_key = int(os.path.split(output_data['image_path'])[1].split('.')[0])
@@ -221,18 +227,21 @@ if __name__ == '__main__':
         t_true = np.array(file_contents[anno_key][0]['cam_t_m2c'])
 
         add_errors = []
+        ang_dists = []
         for i in range(len(t_preds)):
             r_pred = R_preds[i]
             rotation = Rotation.from_matrix(r_pred)
-            euler_angles = rotation.as_euler('xyz', degrees=True)
-            # euler_angles[0] = 180 - euler_angles[0]
-            r_pred_new = Rotation.from_euler('xyz', euler_angles).as_matrix()
-            # r_pred_new = np.eye(3, 3)
+            euler_angles_pred = rotation.as_euler('xyz', degrees=True)
+            # euler_angles_pred[2] = - euler_angles_pred[2]
+            euler_angles_true = Rotation.from_matrix(r_true).as_euler('xyz', degrees=True)
+            r_pred_new = Rotation.from_euler('xyz', euler_angles_pred, degrees=True).as_matrix()
             # r_true = np.eye(3, 3)
+            ang_dist = angular_distance(r_pred_new, r_true)
+            ang_dists.append(ang_dist)
             add_error = compute_ADD(
                 r_pred_new, t_preds[i], r_true, t_true, mesh_points)
             add_errors.append(add_error)
-        is_correct = check_ADD(min(add_errors), 261.47178102, diameter_threshold=0.28)
+        is_correct = check_ADD(min(add_errors), 261.47178102, diameter_threshold=0.1)
         is_corrects.append(is_correct)
     ADD = 100*np.sum(is_corrects)/len(is_corrects)
     print('ADD accuracy', ADD)

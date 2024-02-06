@@ -112,7 +112,7 @@ for i in range(1180):
     # ####### Compute focal length of pyrender camera ###
     f_syn = cam_H / (2 * np.tan(args.y_fov / 2))
     t_syn = args.distance
-    image = load_image(IMAGE_PATH)
+    image = cv2.imread(IMAGE_PATH)
     square_bbox = make_bb_square([x_min, y_min, x_max, y_max])
     x_min, y_min, x_max, y_max = square_bbox
     image = image[max(0, y_min):max(0, y_max), max(x_min, 0):max(x_max, 0)]
@@ -122,7 +122,9 @@ for i in range(1180):
     print('Estimated z :{}'.format(output['t_real_z']))
     print('Treal :{}'.format(output['t_reals']))
     print('Rreal :{}'.format(output['R_obj_2_cams'][0]))
-    show_image(output['image'])
+    # show_image(output['image'])
+    cv2.imwrite('results/closest_image_{}.png'.format(image_ID), output['closest_images'][0])
+    cv2.imwrite('results/closest_image_decoded{}.png'.format(image_ID), output['decoded_image'])
     output['image_path'] = IMAGE_PATH
     outputs.append(output)
 # Write outputs ###
